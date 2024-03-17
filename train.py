@@ -137,10 +137,17 @@ def training(dataset, opt, pipe, dataset_name, testing_iterations, saving_iterat
         
         image, viewspace_point_tensor, visibility_filter, offset_selection_mask, radii, scaling, opacity = render_pkg["render"], render_pkg["viewspace_points"], render_pkg["visibility_filter"], render_pkg["selection_mask"], render_pkg["radii"], render_pkg["scaling"], render_pkg["neural_opacity"]
 
-        gt_image = viewpoint_cam.original_image.cuda()
-        Ll1 = l1_loss(image, gt_image)
+        DEPTH_THRESHOLD = 2.5
+        depth_pkg = render(viewpoint_cam, gaussians, pipe, background, visible_mask=voxel_visible_mask, retain_grad=False, render_depth=True)
+        depth_map = depth_pkg["render"].detach()
+        print(depth_map)
+        depth_mask = (depth_map[:, :, 0] < DEPTH_THRESHOLD)
 
-        ssim_loss = (1.0 - ssim(image, gt_image))
+        gt_image = viewpoint_cam.original_image.cuda()
+
+        Ll1 = l1_loss(image*depth_mask, gt_image*depth_mask)
+
+        ssim_loss = (1.0 - ssim(image*depth_mask, gt_image*depth_mask))
         scaling_reg = scaling.prod(dim=1).mean()
         loss = (1.0 - opt.lambda_dssim) * Ll1 + opt.lambda_dssim * ssim_loss + 0.01*scaling_reg
 

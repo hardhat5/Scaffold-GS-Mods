@@ -110,7 +110,7 @@ def generate_neural_gaussians(viewpoint_camera, pc : GaussianModel, visible_mask
     else:
         return xyz, color, opacity, scaling, rot
 
-def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, visible_mask=None, retain_grad=False):
+def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, scaling_modifier = 1.0, visible_mask=None, retain_grad=False, render_depth=False):
     """
     Render the scene. 
     
@@ -132,6 +132,10 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         except:
             pass
 
+    # Render depth
+    if render_depth:
+        xyz_dist = torch.norm(xyz - viewpoint_camera.camera_center, dim=-1, keepdims=True)
+        color = xyz_dist.repeat([1, 3])
 
     # Set up rasterization configuration
     tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
