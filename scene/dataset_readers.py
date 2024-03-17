@@ -108,7 +108,9 @@ def readColmapCameras(cam_extrinsics, cam_intrinsics, images_folder):
 
         image_path = os.path.join(images_folder, os.path.basename(extr.name))
         image_name = os.path.basename(image_path).split(".")[0]
-        image = Image.open(image_path)
+        image_file = Image.open(image_path)
+        image = image_file.copy()
+        image_file.close()
 
         # print(f'image: {image.size}')
 
